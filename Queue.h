@@ -55,6 +55,8 @@ public:
     Iterator end();
     void printQueue() const;
 
+    class QueueEmpty{};
+
 };
 
 //--------------iterator class----------------
@@ -115,19 +117,32 @@ Queue<Element>::Queue(const Queue& copyQueue){
     m_front = nullptr;
     m_rear = nullptr;
     Node<Element>* currentCopy = copyQueue.m_front;
-  
+    typename Queue<Element>::Iterator it = (copyQueue);
+    //אם נרקה חריגה צריך לשחרר את מה שהוכנס עד עכשיו
+    for (it = queue.begin();  it != queue.end(); it++){
+        try{
+            this->pushBack(*it);
+        }catch(std::bad_alloc& e){
+        
         while (currentCopy != nullptr) {
 
             pushBack(currentCopy->m_data);
             currentCopy = currentCopy->m_next;
+            throw e;
         }
-   
+        }  
+    }
     delete currentCopy;
 
 }
 
 template <class Element>
 Queue<Element>::~Queue(){
+
+    if (m_front == nullptr)
+    {
+        return;
+    }
     
     while (m_front != nullptr) {
 
@@ -180,20 +195,29 @@ void Queue<Element>::pushBack(const Element newElement){
 
 template <class Element>
 Element& Queue<Element>::front(){
-    //if ( m_front == nullptr){ }
+    if ( m_front == nullptr){
+
+        throw QueueEmpty;
+    }
     return(m_front->m_data);
 }
 
 template <class Element>
 const Element& Queue<Element>::front() const{
-    //if ( m_front == NULL){}
+    if ( m_front == nullptr){
+
+        throw QueueEmpty;
+    }
     return(m_front->m_data); 
 }
 
 template <class Element>
 void Queue<Element>::popFront(){
 
-//     if (m_front == NULL){}
+    if (m_front == nullptr){
+
+        throw QueueEmpty;
+    }
 
     Node<Element>* nodeToDelete = m_front; 
     m_front = m_front->m_next;
