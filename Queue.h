@@ -8,54 +8,78 @@
 template <class Element>
 class Queue{
 
-    template <class NodeElement>
-    struct Node{
-        Element m_data;
-        Node* m_next; 
-    public:
-        Node() = default;
-        Node(const NodeElement& newElement){
-            m_data = newElement;
-            m_next = nullptr;
-    }
-        Node& operator=(const Node&) = default;
-        ~Node() = default;
-        void print();
-    };
+    private: 
 
-int m_size;
-Node<Element>* m_front;
-Node<Element>* m_rear;
+        template <class NodeElement>
+        struct Node{
+
+            
+
+            Element m_data;
+            Node* m_next; 
+
+            public:
+
+                Node() = default; // why default?
+                Node(const NodeElement& newElement){ // why not default?
+
+                    m_data = newElement;
+                    m_next = nullptr;
+                }
+
+                // Node(const Node& copyNode) = default;
+
+                Node& operator=(const Node&) = default;
+
+                ~Node() = default; // why default? 
+                void print();
+            };
+
+        int m_size;
+        Node<Element>* m_front;
+        Node<Element>* m_rear;
 
 public:
 
-    Queue();
-    //copy constructor
-    Queue(const Queue& newQueue);
-    //dctor
-    ~Queue();
-    Queue<Element>& operator=(const Queue<Element>&);
-    //insert element to the end of the queue
-    void pushBack(const Element newElement);
-    //return the first element in the queue
-    Element& front();
-    //return the first element in the queue - const
-    const Element& front() const;
-    //remove the first element
-    void popFront();
-    //return the current size of the queue
-    int size() const;
+    Queue(); // why not default?
+
+    Queue(const Queue& newQueue); //copy constructor
+    ~Queue(); //dctor
+
+
+    Queue<Element>& operator=(const Queue<Element>&); 
+    // add == and != operators
+
+    void pushBack(const Element newElement); //insert element to the end of the queue
+    
+    Element& front(); //return the first element in the queue
+    
+    const Element& front() const; //return the first element in the queue - const  // why reference?
+    
+    void popFront(); //remove the first element
+    
+    int size() const; //return the current size of the queue
+
     template <class Condition>
-    Queue<Element> filter(const Queue<Element> queue,const Condition c);
+    friend Queue<Element> filter(const Queue<Element> queue ,const Condition c); // this function should be outside the class ************************ !!!!!!!!!!
+
     template <class Operation>
-    void tranform(Queue<Element>& queue,const Operation o);
+    friend void transform(Queue<Element> &queue,const Operation o);
     
     class Iterator;
-    Iterator begin();
-    Iterator end();
+    Iterator begin() const;
+    Iterator end() const;
+
+    class ConstIterator;
+
+    // for debugging
     void printQueue() const;
 
-    class QueueEmpty{};
+
+    // Exeptions zone
+    class EmptyQueue{};
+
+    
 
 };
 
@@ -63,43 +87,33 @@ public:
 
 template <class Element>
 class Queue<Element>::Iterator{
-    const Node<Element>* m_current;
-    Iterator(const Queue<Element>* queue);
-    friend class Queue;
-public:
+
+    private:
+
+        Iterator(const Queue<Element>* queue); // check this out
+        const Node<Element>* m_current;
+        friend class Queue;
+
+    public:
     
-    Iterator(const Iterator& copyIterator);
-    ~Iterator() = default;
-    Iterator& operator=(const Iterator&);
-    const Element& operator*() const;
-    Queue<Element>::Iterator& operator++();
-    Queue<Element>::Iterator operator++(int);
-    bool operator==(const Iterator&) const;
-    bool operator!=(const Iterator&) const; 
-    void printIT();  
+        Iterator(const Iterator& copyIterator);
+        ~Iterator() = default;
+
+        const Element& operator*() const;
+        Queue<Element>::Iterator& operator++();
+        Queue<Element>::Iterator operator++(int);
+
+        bool operator==(const Iterator&) const;
+        bool operator!=(const Iterator&) const; 
+
+        // for debugging
+        class InvalidOperation{};
+        void printIT();  
 
 };
 
-//---------------const iterator class---------
 
-// template <class Element>
-// class Queue<Element>::Iterator{
-//     const Node<Element>* m_current;
-//     Iterator(const Queue<Element>* queue);
-//     friend class Queue;
-// public:
-    
-//     Iterator(const Iterator& copyIterator);
-//     ~Iterator() = default;
-//     Iterator& operator=(const Iterator&);
-//     const Element& operator*() const;
-//     Queue<Element>::Iterator& operator++();
-//     Queue<Element>::Iterator operator++(int);
-//     bool operator==(const Iterator&) const;
-//     bool operator!=(const Iterator&) const; 
-//     void printIT();  
 
-// };
 
 //---------- QUEUE -------------------------
 
@@ -113,28 +127,33 @@ Queue<Element>::Queue(){
 template <class Element>
 Queue<Element>::Queue(const Queue& copyQueue){
 
+
+    if (this == &copyQueue){
+
+        return;
+    }
+
     m_size = 0;
     m_front = nullptr;
     m_rear = nullptr;
-    Node<Element>* currentCopy = copyQueue.m_front;
-    typename Queue<Element>::Iterator it = (copyQueue);
-    //אם נרקה חריגה צריך לשחרר את מה שהוכנס עד עכשיו
-    for (it = queue.begin();  it != queue.end(); it++){
+
+    typename Queue<Element>::Iterator it(&copyQueue);
+
+    for (it = copyQueue.begin();  it != copyQueue.end(); it++){
+
         try{
+
             this->pushBack(*it);
+
         }catch(std::bad_alloc& e){
         
-        while (currentCopy != nullptr) {
-
-            pushBack(currentCopy->m_data);
-            currentCopy = currentCopy->m_next;
-            throw e;
-        }
+            delete this;
         }  
     }
-    delete currentCopy;
 
+    delete &it;
 }
+
 
 template <class Element>
 Queue<Element>::~Queue(){
@@ -143,34 +162,64 @@ Queue<Element>::~Queue(){
     {
         return;
     }
-    
-    while (m_front != nullptr) {
 
-        Node<Element>* temp = m_front;
-        m_front = m_front->m_next;
-        delete temp;
-   }
+    typename Queue<Element>::Iterator it = (this);
+
+    for (it = this->begin();  it != this->end(); it++)
+    {
+        delete &it;
+    }
+
+    delete m_front;
+    delete m_rear;
 }
 
 template <class Element>
 Queue<Element>& Queue<Element>::operator=(const Queue<Element>& copyQueue){
 
+    if (this == &copyQueue){
+
+        return *this;
+    }
+
     m_size = copyQueue.m_size;
+
+    delete this;
+
+    m_size = 0;
+    m_front = nullptr;
+    m_rear = nullptr;
+
+    typename Queue<Element>::Iterator it(&copyQueue);
+
+    for (it = copyQueue.begin();  it != copyQueue.end(); it++){
+
+        try{
+
+            this->pushBack(*it);
+
+        }catch(std::bad_alloc& e){
+        
+            delete this;
+        }  
+    }
+
+    
+    /*
     Node<Element>* currentCopy = copyQueue.m_front;
     Node<Element>* currentQueue = m_front;
   
-        while (currentCopy != nullptr) {
+    while (currentCopy != nullptr) {
         
-            currentQueue->m_data = currentCopy->m_data;
-            currentCopy = currentCopy->m_next;
-            currentQueue = currentQueue->m_next;
-        }
+        currentQueue->m_data = currentCopy->m_data;
+        currentCopy = currentCopy->m_next;
+        currentQueue = currentQueue->m_next;
+    }
 
-    delete currentCopy;
-    delete currentQueue;
-
-return *this;
-
+    delete currentCopy; // why delete?
+    delete currentQueue; // why delete?*/
+    delete &it;
+    return *this;
 }
       
 
@@ -178,6 +227,7 @@ template <class Element>
 void Queue<Element>::pushBack(const Element newElement){
 
     Node<Element>* newNode = new Node<Element>(newElement);
+
     if (m_front ==  nullptr){
 
         m_front = newNode;
@@ -186,7 +236,7 @@ void Queue<Element>::pushBack(const Element newElement){
     else{
 
         m_rear->m_next = newNode;
-        m_rear = newNode;
+        m_rear = newNode; // why not m_rear = nullptr?
     }
 
     m_size++;
@@ -195,18 +245,21 @@ void Queue<Element>::pushBack(const Element newElement){
 
 template <class Element>
 Element& Queue<Element>::front(){
-    if ( m_front == nullptr){
 
-        throw QueueEmpty;
+    if (m_front == nullptr){
+
+        throw EmptyQueue();
     }
+
     return(m_front->m_data);
 }
 
 template <class Element>
 const Element& Queue<Element>::front() const{
+
     if ( m_front == nullptr){
 
-        throw QueueEmpty;
+        throw EmptyQueue();
     }
     return(m_front->m_data); 
 }
@@ -216,13 +269,13 @@ void Queue<Element>::popFront(){
 
     if (m_front == nullptr){
 
-        throw QueueEmpty;
+        throw EmptyQueue();
     }
 
     Node<Element>* nodeToDelete = m_front; 
     m_front = m_front->m_next;
     delete nodeToDelete;
-    m_size--;
+    m_size--; // check this function
 }
 
 template <class Element>
@@ -233,41 +286,46 @@ int Queue<Element>::size() const{
 
 
 template <class Element>
-typename Queue<Element>::Iterator Queue<Element>::begin(){
+typename Queue<Element>::Iterator Queue<Element>::begin() const{
+
     return Iterator(this);
 }
 
 template <class Element>
-typename Queue<Element>::Iterator Queue<Element>::end(){
+typename Queue<Element>::Iterator Queue<Element>::end() const{
+
     Iterator t = (this);
     for(int i = 0; i < m_size; i++){
         t++;
     }
     return(t);
-
 }
 
-template <class Element, class Condition>
-Queue<Element> filter(const Queue<Element> queue,const Condition c){
 
-    Queue<Element> filteredQueue();
-    typename Queue<Element>::Iterator it = (queue);
+template <class Element, class Condition>
+Queue<Element> filter(const Queue<Element> queue ,const Condition c){
+
+    Queue<Element> filteredQueue(); // empty queue of the filtered elements
+
+    typename Queue<Element>::Iterator it(&queue);
+
     for (it = queue.begin();  it != queue.end(); it++)
     {
-        if( c(*it)){
+        if(c(*it)){
+
             filteredQueue.pushback(*it);
         }
     }
 
     return (filteredQueue);
-
 }
 
 
 template <class Element, class Operation>
-void tranform(Queue<Element>& queue,const Operation o){
+void transform(Queue<Element>& queue,const Operation o){
 
-    typename Queue<Element>::Iterator it = (queue);
+    typename Queue<Element>::Iterator it = (&queue);
+
     for (it = queue.begin();  it != queue.end(); it++)
     {
         o(*it);
@@ -295,13 +353,6 @@ Queue<Element>::Iterator::Iterator(const Iterator& copyIterator){
 
     m_current = copyIterator.m_current;
 
-
-}
-
-template <class Element>
-typename Queue<Element>::Iterator& Queue<Element>::Iterator::operator=(const Iterator& other){
-
-    m_current.m_data = other.m_current.m_data;
 
 }
 
@@ -346,22 +397,102 @@ const Element& Queue<Element>::Iterator::operator*() const{
 
 
 
-
-
 template <class Element>    
 void Queue<Element>::printQueue() const {
     
     Node<Element>* current = m_front;
     
-        while (current != nullptr) {
+    while (current != nullptr) {
    
-            std::cout << current->m_data << " ";
-            current = current->m_next;
+        std::cout << current->m_data << " ";
+        current = current->m_next;
     }
      
-    std::cout << m_size << " ";
+    std::cout << "size is " << m_size << " ";
     std::cout << std::endl;
 }
+
+
+
+//---------------const iterator class---------
+
+template <class Element>
+class Queue<Element>::ConstIterator : public Queue<Element>::Iterator{
+
+    private:
+    const Node<Element>* m_current;
+    ConstIterator(const Queue<Element>* queue);
+    friend class Queue;
+
+ public:
+    
+    ConstIterator(const Iterator& copyIterator);
+    ~ConstIterator() = default;
+    const Element& operator*() const;
+    Queue<Element>::ConstIterator& operator++();
+    Queue<Element>::ConstIterator operator++(int);
+    bool operator==(const ConstIterator&) const;
+    bool operator!=(const ConstIterator&) const; 
+
+};
+
+//--------------const Iterator------------------
+
+
+template <class Element>
+Queue<Element>::ConstIterator::ConstIterator(const Queue<Element>* queue){
+
+    m_current = queue->m_front;
+
+}
+
+template <class Element>
+Queue<Element>::ConstIterator::ConstIterator(const Iterator& copyIterator){
+
+    m_current = copyIterator.m_current;
+
+
+}
+
+template <class Element>
+typename Queue<Element>::ConstIterator& Queue<Element>::ConstIterator::operator++(){
+
+    m_current = m_current->m_next;
+    return *this;
+
+}
+
+template <class Element>
+typename Queue<Element>::ConstIterator Queue<Element>::ConstIterator::operator++(int){
+
+    Iterator temp = *this;
+    ++(*this);
+    return temp;
+
+}
+
+template <class Element>
+bool Queue<Element>::ConstIterator::operator==(const ConstIterator& compreIterator) const{
+     
+    return (m_current == compreIterator.m_current);
+
+
+}
+
+template <class Element>
+bool Queue<Element>::ConstIterator::operator!=(const ConstIterator& compreIterator) const{
+     
+    return !(*this == compreIterator);
+
+
+}
+
+template <class Element>
+const Element& Queue<Element>::ConstIterator::operator*() const{
+
+    return (m_current->m_data);
+}
+
 
 
 #endif
