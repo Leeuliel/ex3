@@ -32,8 +32,10 @@ bool isEven(int i){
 
 int main(){
 
+	
 
   Queue<int> q;
+	
 
   for (int i = 0; i<101; i++){
 
@@ -72,7 +74,7 @@ int main(){
     std::cout << i << std::endl;
   }
     
-bool test = true;
+	bool test = true;
 
     for (int i = 0; i<101; i++){
 
@@ -92,12 +94,14 @@ bool test = true;
 
         std::cout << "pop front is working" << std::endl;
     }
-
+	
+	
     for (int i = 0; i<101; i++){
 
         q.pushBack(i);
     }
-
+	
+	
 
     q2 = q;
 
@@ -136,7 +140,8 @@ bool test = true;
 
         q.pushBack(i);
     }
-
+	
+	
     q2 = q;
 
     q.printQueue();
@@ -150,7 +155,7 @@ bool test = true;
     std::cout << "--q2--" << std::endl;
     q1.printQueue();
 
-
+	
     return 0;
 }
 

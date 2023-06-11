@@ -46,6 +46,8 @@ public:
     Queue(const Queue& newQueue); //copy constructor
     ~Queue(); //dctor
 
+    void clear(); //delete all the elements in the queue
+
 
     Queue<Element>& operator=(const Queue<Element>&); 
     // add == and != operators
@@ -177,7 +179,7 @@ Queue<Element>::~Queue(){
 
     try {
 
-        for (Element it : *this){
+        for (Element &it : *this){
             
             delete &it;
         }
@@ -213,6 +215,41 @@ Queue<Element>::~Queue(){
 }
 
 template <class Element>
+void Queue<Element>::clear(){
+
+    if (m_front == nullptr)
+    {
+        return;
+    }
+
+    typename Queue<Element>::Iterator it = this->begin();
+
+    try {
+
+        for (Element &it : *this){
+            
+            delete &it;
+        }
+    
+    } catch (typename Queue<Element>::Iterator::InvalidOperation& o){
+
+        std::cout << "Iterator error" << std::endl;
+        
+    }catch (typename Queue<Element>::ConstIterator::InvalidOperation& o){
+
+        std::cout << "Iterator error" << std::endl;
+        
+    }
+
+    m_size = 0;
+    m_front = nullptr;
+    m_rear = nullptr;
+
+}
+
+
+
+template <class Element>
 Queue<Element>& Queue<Element>::operator=(const Queue<Element>& copyQueue){
 
     if (this == &copyQueue){
@@ -220,13 +257,7 @@ Queue<Element>& Queue<Element>::operator=(const Queue<Element>& copyQueue){
         return *this;
     }
 
-    m_size = copyQueue.m_size;
-
-    delete this;
-
-    m_size = 0;
-    m_front = nullptr;
-    m_rear = nullptr;
+    this->clear();
 
     try{
 
@@ -298,7 +329,14 @@ template <class Element>
 void Queue<Element>::pushBack(const Element newElement){
 
    //the new throw exception
+
+    
     Node<Element>* newNode = new Node<Element>(newElement);
+
+    if (newNode == nullptr){
+
+        throw std::bad_alloc();
+    }
 
     if (m_front ==  nullptr){
 
@@ -670,11 +708,6 @@ template <class Element>
 typename Queue<Element>::ConstIterator& Queue<Element>::ConstIterator::operator++(){
     
     if(m_current == nullptr){
-
-        throw Queue<Element>::ConstIterator::InvalidOperation();
-    }
-
-    if (m_current == nullptr){
 
         throw Queue<Element>::ConstIterator::InvalidOperation();
     }
