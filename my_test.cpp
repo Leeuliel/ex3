@@ -144,8 +144,11 @@ bool test = true;
 
     Queue<int> q1 = filter(q,isEven);
     transform(q,setEvenToZero);
-    q1.printQueue();
+
+    std::cout << "--q1--" << std::endl;
     q.printQueue();
+    std::cout << "--q2--" << std::endl;
+    q1.printQueue();
 
 
     return 0;
