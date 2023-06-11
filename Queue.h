@@ -2,6 +2,8 @@
 #define _QUEUE_H
 #include <iostream>
 #include <utility>
+#include <exception>
+#include <string>
 
 //-----------------Queue class------------
 
@@ -12,8 +14,6 @@ class Queue{
 
         template <class NodeElement>
         struct Node{
-
-            
 
             Element m_data;
             Node* m_next; 
@@ -60,17 +60,19 @@ public:
     
     int size() const; //return the current size of the queue
 
-    template <class Condition>
-    friend Queue<Element> filter(const Queue<Element> queue ,const Condition c); // this function should be outside the class ************************ !!!!!!!!!!
-
-    template <class Operation>
-    friend void transform(Queue<Element> &queue,const Operation o);
+    //template <class C>
+    //Queue<Element> filter(const Queue<Element> queue ,C comparator); // this function should be outside the class 
+    //friend Queue<Element> filter(const Queue<Element> &queue ,bool(*(Condition))(C))
+    //template <class O>
+    //friend void transform(Queue<Element> &queue,bool(*(Operation))(O));
     
     class Iterator;
     Iterator begin() const;
     Iterator end() const;
 
     class ConstIterator;
+    ConstIterator cbegin() const;
+    ConstIterator cend() const;
 
     // for debugging
     void printQueue() const;
@@ -83,34 +85,7 @@ public:
 
 };
 
-//--------------iterator class----------------
 
-template <class Element>
-class Queue<Element>::Iterator{
-
-    private:
-
-        Iterator(const Queue<Element>* queue); // check this out
-        const Node<Element>* m_current;
-        friend class Queue;
-
-    public:
-    
-        Iterator(const Iterator& copyIterator);
-        ~Iterator() = default;
-
-        const Element& operator*() const;
-        Queue<Element>::Iterator& operator++();
-        Queue<Element>::Iterator operator++(int);
-
-        bool operator==(const Iterator&) const;
-        bool operator!=(const Iterator&) const; 
-
-        // for debugging
-        class InvalidOperation{};
-        void printIT();  
-
-};
 
 
 
@@ -267,7 +242,7 @@ const Element& Queue<Element>::front() const{
 template <class Element>
 void Queue<Element>::popFront(){
 
-    if (m_front == nullptr){
+    if (m_front == nullptr || m_size == 0){ 
 
         throw EmptyQueue();
     }
@@ -302,64 +277,107 @@ typename Queue<Element>::Iterator Queue<Element>::end() const{
 }
 
 
-template <class Element, class Condition>
-Queue<Element> filter(const Queue<Element> queue ,const Condition c){
+template <class Element>
+typename Queue<Element>::ConstIterator Queue<Element>::cbegin() const{
 
-    Queue<Element> filteredQueue(); // empty queue of the filtered elements
+    return ConstIterator(this);
+}
 
-    typename Queue<Element>::Iterator it(&queue);
+template <class Element>
+typename Queue<Element>::ConstIterator Queue<Element>::cend() const{
 
-    for (it = queue.begin();  it != queue.end(); it++)
-    {
-        if(c(*it)){
-
-            filteredQueue.pushback(*it);
-        }
+    ConstIterator t = (this);
+    for(int i = 0; i < m_size; i++){
+        t++;
     }
-
-    return (filteredQueue);
+    return(t);
 }
 
 
-template <class Element, class Operation>
-void transform(Queue<Element>& queue,const Operation o){
+template<class Element, class C>
+Queue<Element> filter(const Queue<Element> &queue ,C comparator){ // const because we dont want to change the queue on this operation, and we have const iterator
 
-    typename Queue<Element>::Iterator it = (&queue);
+    Queue<Element> filteredQueue; // empty queue of the filtered elements
+    
+    for (Element element : queue) // running with the const iterator
+    {
+        if(comparator(element)){
+
+            filteredQueue.pushBack(element);
+        }
+    }
+    
+    return filteredQueue;
+}
+
+
+template <class Element, class O>
+void transform(Queue<Element> &queue,O operation){
+
+    typename Queue<Element>::Iterator it = queue.begin(); // we need to use the regular iterator of the queue, because we want to change the queue
 
     for (it = queue.begin();  it != queue.end(); it++)
     {
-        o(*it);
+        operation(*it);
     }
 }
 
 //--------------Iterator------------------
 
+
+//--------------iterator class----------------
+
 template <class Element>
-void Queue<Element>::Iterator::printIT(){
- std::cout << m_current->m_data << " ";
+class Queue<Element>::Iterator{
+
+    private:
+
+        Iterator(const Queue<Element>* queue); // check this out
+        Node<Element>* m_current;
+        friend class Queue;
+
+    public:
+    
+        Iterator(const Iterator& copyIterator);
+        ~Iterator() = default; // we dont need to delete the iterator, because we dont allocate memory for it
+
+        Element& operator*(); // we can change the value of the element
+        Queue<Element>::Iterator& operator++();
+        Queue<Element>::Iterator operator++(int);
+
+        bool operator==(const Iterator&) const; // const because we dont want to change the iterator on this operation
+        bool operator!=(const Iterator&) const; // const because we dont want to change the iterator on this operation
+
+        class InvalidOperation{}; // we can throw this exception if we want to do something that is not allowed
+
+};
+
+
+template <class Element>
+Queue<Element>::Iterator::Iterator(const Queue<Element>* queue){ // get a pointer to the queue, so we send the address, mean send the reference
+
+    m_current = queue->m_front; // shallow copy - because this is an iterator, we want to be able to change the queue
 
 }
 
-
 template <class Element>
-Queue<Element>::Iterator::Iterator(const Queue<Element>* queue){
-
-    m_current = queue->m_front;
-
-}
-
-template <class Element>
-Queue<Element>::Iterator::Iterator(const Iterator& copyIterator){
+Queue<Element>::Iterator::Iterator(const Iterator& copyIterator){// copy constructor - copy another iterator
 
     m_current = copyIterator.m_current;
-
-
 }
 
 template <class Element>
-typename Queue<Element>::Iterator& Queue<Element>::Iterator::operator++(){
+typename Queue<Element>::Iterator& Queue<Element>::Iterator::operator++(){ // prefix
 
-    m_current = m_current->m_next;
+    if (m_current == nullptr){ // if we are at the end of the queue
+
+        throw InvalidOperation();
+    }
+    else {
+
+        m_current = m_current->m_next;
+    }
+    
     return *this;
 
 }
@@ -367,34 +385,37 @@ typename Queue<Element>::Iterator& Queue<Element>::Iterator::operator++(){
 template <class Element>
 typename Queue<Element>::Iterator Queue<Element>::Iterator::operator++(int){
 
-    Iterator temp = *this;
-    ++(*this);
+    Iterator temp(*this);
+
+    try{
+            
+        ++(*this);
+
+    }catch (InvalidOperation& e){
+            
+        throw InvalidOperation();
+    }
+
     return temp;
-
 }
 
 template <class Element>
-bool Queue<Element>::Iterator::operator==(const Iterator& compreIterator) const{
+bool Queue<Element>::Iterator::operator==(const Iterator& compareIterator) const{
      
-    return (m_current == compreIterator.m_current);
-
-
+    return (this->m_current == compareIterator.m_current);
 }
 
 template <class Element>
-bool Queue<Element>::Iterator::operator!=(const Iterator& compreIterator) const{
+bool Queue<Element>::Iterator::operator!=(const Iterator& compareIterator) const{
      
-    return !(*this == compreIterator);
-
-
+    return !((*this) == compareIterator);
 }
 
 template <class Element>
-const Element& Queue<Element>::Iterator::operator*() const{
+Element& Queue<Element>::Iterator::operator*(){
 
     return (m_current->m_data);
 }
-
 
 
 template <class Element>    
@@ -417,9 +438,10 @@ void Queue<Element>::printQueue() const {
 //---------------const iterator class---------
 
 template <class Element>
-class Queue<Element>::ConstIterator : public Queue<Element>::Iterator{
+class Queue<Element>::ConstIterator{
 
-    private:
+ private:
+    
     const Node<Element>* m_current;
     ConstIterator(const Queue<Element>* queue);
     friend class Queue;
@@ -433,6 +455,8 @@ class Queue<Element>::ConstIterator : public Queue<Element>::Iterator{
     Queue<Element>::ConstIterator operator++(int);
     bool operator==(const ConstIterator&) const;
     bool operator!=(const ConstIterator&) const; 
+
+    class InvalidOperation{};
 
 };
 
@@ -457,7 +481,15 @@ Queue<Element>::ConstIterator::ConstIterator(const Iterator& copyIterator){
 template <class Element>
 typename Queue<Element>::ConstIterator& Queue<Element>::ConstIterator::operator++(){
 
-    m_current = m_current->m_next;
+    if (m_current == nullptr){
+
+        throw InvalidOperation();
+    }
+    else {
+
+        m_current = m_current->m_next;
+    }
+
     return *this;
 
 }
@@ -466,7 +498,16 @@ template <class Element>
 typename Queue<Element>::ConstIterator Queue<Element>::ConstIterator::operator++(int){
 
     Iterator temp = *this;
-    ++(*this);
+
+    try {
+            
+        ++(*this);
+    
+    } catch (InvalidOperation& e){
+            
+        throw InvalidOperation();
+    }
+
     return temp;
 
 }
@@ -475,16 +516,12 @@ template <class Element>
 bool Queue<Element>::ConstIterator::operator==(const ConstIterator& compreIterator) const{
      
     return (m_current == compreIterator.m_current);
-
-
 }
 
 template <class Element>
 bool Queue<Element>::ConstIterator::operator!=(const ConstIterator& compreIterator) const{
      
     return !(*this == compreIterator);
-
-
 }
 
 template <class Element>

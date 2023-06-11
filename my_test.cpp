@@ -1,14 +1,23 @@
 #include "Queue.h"
 #include <iostream>
+#include <string>
+#include <cassert>
 
 
-struct IsEven {
-    bool operator()(int num) const {
-        return num % 2 == 0;
+void setEvenToZero(int &i){
+
+    if (i%2 == 0){
+
+        i = 0;
     }
-};
 
-bool f(int i){
+    else{
+
+        i = 1;
+    }
+}
+
+bool isEven(int i){
 
     if (i%2 == 0){
 
@@ -20,7 +29,6 @@ bool f(int i){
         return false;
     }
 }
-
 
 int main(){
 
@@ -134,12 +142,11 @@ bool test = true;
     q.printQueue();
     q2.printQueue();
 
-
-    //Queue<int> q1 = filter(q, IsEven());
-
+    Queue<int> q1 = filter(q,isEven);
+    transform(q,setEvenToZero);
+    q1.printQueue();
     q.printQueue();
-    q2.printQueue();
-    //q1.printQueue();
+
 
     return 0;
 }
