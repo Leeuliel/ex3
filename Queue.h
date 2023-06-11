@@ -120,7 +120,7 @@ Queue<Element>::Queue(const Queue& copyQueue){
 
            it++;
 
-        }catch (Queue<int>::Iterator::InvalidOperation& o){
+        }catch (typename Queue<Element>::Iterator::InvalidOperation& o){
 
             std::cout << "Iterator error" << std::endl;
         }
@@ -155,7 +155,7 @@ Queue<Element>::~Queue(){
 
            it++;
 
-        }catch (Queue<int>::Iterator::InvalidOperation& o){
+        }catch (typename Queue<Element>::Iterator::InvalidOperation& o){
 
             std::cout << "Iterator error" << std::endl;
         }
@@ -191,7 +191,7 @@ Queue<Element>& Queue<Element>::operator=(const Queue<Element>& copyQueue){
 
            it++;
 
-        }catch (Queue<int>::Iterator::InvalidOperation& o){
+        }catch (typename Queue<Element>::Iterator::InvalidOperation& o){
 
             std::cout << "Iterator error" << std::endl;
         }
@@ -351,7 +351,7 @@ void transform(Queue<Element> &queue,O operation){
 
            it++;
 
-        }catch (Queue<int>::Iterator::InvalidOperation& o){
+        }catch (typename Queue<Element>::Iterator::InvalidOperation& o){
 
             std::cout << "Iterator error" << std::endl;
         }
